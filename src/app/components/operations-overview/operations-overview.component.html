@@ -1,0 +1,103 @@
+<app-menu />
+<p-toast />
+<p-table [value]="items" [(contextMenuSelection)]="selectedItemVal" dataKey="id">
+  <ng-template #caption>
+    <div class="flex items-center justify-between">
+      <span class="text-xl font-bold">Requests</span>
+      <div>
+        <p-button icon="pi pi-refresh" (onClick)="getOperations()" rounded raised />
+        <p-button icon="pi pi-plus" (onClick)="showCreate()" label="Create" class="p-2 m-2.5"/>
+      </div>
+    </div>
+  </ng-template>
+  <ng-template #header>
+    <tr>
+      <th style="width:5%"></th>
+      <th style="width:5%">ID</th>
+      <th style="width:15%">Request id</th>
+      <th style="width:15%">Colony id</th>
+      <th style="width:15%">type</th>
+      <th style="width:15%">Stage</th>
+      <th style="width:15%">Created</th>
+      <th style="width:15%">Last interaction</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-item let-expanded="expanded">
+    <tr [pContextMenuRow]="item">
+      <td>
+        <p-button type="button" pRipple [pRowToggler]="item" [text]="true" [rounded]="true" [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"/>
+      </td>
+      <td>{{item.id}}</td>
+      <td>{{item.request.id}}</td>
+      <td>{{failsafeColony(item)}}</td>
+      <td>{{item.type}}</td>
+      <td>
+        <p-tag [value]="item.stage" [severity]="getSeverity(item)"/>
+      </td>
+      <td>{{item.creationDate}}</td>
+      <td>{{item.lastInteraction}}</td>
+    </tr>
+  </ng-template>
+  <ng-template #expandedrow let-operation>
+    <tr>
+      <th colspan="8">
+        <div>
+          <h4>Stage Description</h4>
+        </div>
+      </th>
+    </tr>
+    <tr>
+      <td colspan="7">
+        <div>{{ operation.stageDescription }}</div>
+      </td>
+      <td>
+        <p-button rounded label="Next stage" icon="pi pi-arrow-right" (onClick)="advance(operation.id)"/>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-dialog header="create request" [modal]="true" [(visible)]="createVisible">
+  <form [formGroup]="itemForm" (ngSubmit)="addOperation()">
+    <div>
+      <p-select formControlName="type" placeholder="type" [options]="selectTypes" name="type"/>
+      <small class="block text-red-600" *ngIf="type.invalid && (type.dirty || !(type.untouched))">
+        <div *ngIf="type.errors?.['required']">type is required</div>
+      </small>
+    </div>
+    <div>
+      <p-select formControlName="request_id" placeholder="request_id" [options]="selectRequests" optionValue="id" name="request">
+        <ng-template #selectedItem let-selected>
+          <div *ngIf="selected">
+            <div>{{ selected.id }}</div>
+          </div>
+        </ng-template>
+        <ng-template let-item #item>
+          <div>
+            <div>
+              {{ item.id }} : {{ item.type }}
+            </div>
+          </div>
+        </ng-template>
+      </p-select>
+    </div>
+    <div>
+      <p-select formControlName="colony_id" placeholder="colony_id" [options]="selectColonies" optionValue="id" name="colony">
+        <ng-template #selectedItem let-selected>
+          <div *ngIf="selected">
+            <div>{{ selected.id }}</div>
+          </div>
+        </ng-template>
+        <ng-template let-item #item>
+          <div>
+            <div>
+              {{ item.id }} : {{ item.name }}
+            </div>
+          </div>
+        </ng-template>
+      </p-select>
+    </div>
+    <div>
+      <input [disabled]="itemForm.invalid" class="text-gray-900 w-fit rounded-md p-2 m-2.5 text-center border-1 border-solid bg-orange-400 hover:bg-amber-500 active:bg-orange-300 border-1" type="submit" value="Create">
+    </div>
+  </form>
+</p-dialog>

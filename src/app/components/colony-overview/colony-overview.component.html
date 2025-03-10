@@ -1,0 +1,180 @@
+<app-menu />
+<p-toast />
+<p-context-menu #cm [model]="menuItems" />
+<p-table [value]="items" [(contextMenuSelection)]="selectedItemVal" [contextMenu]="cm" dataKey="id">
+  <ng-template #caption>
+    <div class="flex items-center justify-between">
+      <span class="text-xl font-bold">Colonies</span>
+      <div>
+        <p-button icon="pi pi-refresh" (onClick)="getColonies()" rounded raised />
+      </div>
+    </div>
+  </ng-template>
+  <ng-template #header>
+    <tr>
+      <th style="width:10%"></th>
+      <th style="width:10%">ID</th>
+      <th style="width:20%">Created</th>
+      <th style="width:20%">Population</th>
+      <th style="width:20%">Ant species</th>
+      <th style="width:20%">Formicarium type</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-item let-expanded="expanded">
+    <tr [pContextMenuRow]="item">
+      <td>
+        <p-button type="button" pRipple [pRowToggler]="item" [text]="true" [rounded]="true" [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"/>
+      </td>
+      <td>{{item.id}}</td>
+      <td>{{item.creationTimestamp}}</td>
+      <td>{{item.population}}</td>
+      <td>{{item.ant.name}}</td>
+      <td>{{item.formicarium.type}}</td>
+    </tr>
+  </ng-template>
+  <ng-template #expandedrow let-item>
+    <tr>
+      <td colspan="6">
+        <div>
+          <h5>Thermometers</h5>
+          <p-table [value]="item.colonyThermometers" dataKey="id">
+            <ng-template #header>
+              <tr>
+                <th>id</th>
+                <th>value</th>
+                <th>last checked</th>
+                <th>zone</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-device>
+              <tr>
+                <td>{{ device.id }}</td>
+                <td>
+                  <p-tag [value]="device.value" [severity]="checkRange(item.ant.optimalTemperature, device.value)" />
+                </td>
+                <td>{{ device.valueTimestamp }}</td>
+                <td>{{ device.zone }}</td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="6">There are no thermometers for this colony</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="6">
+        <div>
+          <h5>Humidity Controls</h5>
+          <p-table [value]="item.colonyHumidities" dataKey="id">
+            <ng-template #header>
+              <tr>
+                <th>id</th>
+                <th>value</th>
+                <th>last checked</th>
+                <th>zone</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-device>
+              <tr>
+                <td>{{ device.id }}</td>
+                <td>
+                  <p-tag [value]="device.value" [severity]="checkRange(item.ant.optimalHumidity, device.value)" />
+                </td>
+                <td>{{ device.valueTimestamp }}</td>
+                <td>{{ device.zone }}</td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="6">There are no humidity controls for this colony.</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="6">
+        <div>
+          <h5>Decorations</h5>
+          <p-table [value]="item.decorations" dataKey="item.name">
+            <ng-template #header>
+              <tr>
+                <th>name</th>
+                <th>amount</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-decoration>
+              <tr>
+                <td>{{ decoration.item.name }}</td>
+                <td>{{ decoration.amount }}</td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="6">There are no decorations for this colony.</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-dialog header="Update colony" [modal]="true" [(visible)]="updateVisible">
+  <form [formGroup]="itemForm" (ngSubmit)="updateColony()">
+    <div>
+      <input formControlName="name" placeholder="name" class="rounded-md p-1 text-gray-900 border-1 bg-amber-100 m-1" name="name"/>
+      <small class="block text-red-600" *ngIf="itemName.invalid && (itemName.dirty || !(itemName.untouched))">
+        <div *ngIf="itemName.errors?.['required']">Name is required</div>
+      </small>
+    </div>
+    <div>
+      <input formControlName="population" placeholder="population" class="rounded-md p-1 text-gray-900 border-1 bg-amber-100 m-1" type="number" name="population"/>
+      <small class="block text-red-600" *ngIf="population.invalid && (population.dirty || !(population.untouched))">
+        <div *ngIf="population.errors?.['required']">Population is required</div>
+        <div *ngIf="population.errors?.['min']">Population can't be negative</div>
+      </small>
+    </div>
+    <div>
+      <input [disabled]="itemForm.invalid" class="text-gray-900 w-fit rounded-md p-2 m-2.5 text-center border-1 border-solid bg-orange-400 hover:bg-amber-500 active:bg-orange-300 border-1" type="submit" value="update">
+    </div>
+  </form>
+</p-dialog>
+<p-dialog header="add Decoration" [modal]="true" [(visible)]="decoVisible">
+  <form [formGroup]="decoForm" (ngSubmit)="addDeco()">
+    <div>
+      <p-select formControlName="itemName" placeholder="item name" [options]="selectItems" optionValue="name" optionLabel="name" name="name">
+        <ng-template #selectedItem let-selected>
+          <div *ngIf="selected">
+            <div>{{ selected.name }}</div>
+          </div>
+        </ng-template>
+        <ng-template let-item #item>
+          <div>
+            <div>
+              {{ item.name }} : {{ item.stored }}
+            </div>
+          </div>
+        </ng-template>
+      </p-select>
+      <small class="block text-red-600" *ngIf="decoName.invalid && (decoName.dirty || !(decoName.untouched))">
+        <div *ngIf="decoName.errors?.['required']">Name is required</div>
+      </small>
+    </div>
+    <div>
+      <input formControlName="amount" placeholder="amount" class="rounded-md p-1 text-gray-900 border-1 bg-amber-100 m-1" type="number" name="ampunt"/>
+      <small class="block text-red-600" *ngIf="amount.invalid && (amount.dirty || !(amount.untouched))">
+        <div *ngIf="amount.errors?.['required']">Amount is required</div>
+        <div *ngIf="amount.errors?.['min']">Amount can't be negative</div>
+      </small>
+    </div>
+    <div>
+      <input [disabled]="decoForm.invalid" class="text-gray-900 w-fit rounded-md p-2 m-2.5 text-center border-1 border-solid bg-orange-400 hover:bg-amber-500 active:bg-orange-300 border-1" type="submit" value="add">
+    </div>
+  </form>
+</p-dialog>
